@@ -10,7 +10,7 @@ const MAIN_WATERFALL_DIALOG = 'mainWaterfallDialog';
 const CHOICE_PROMPT = 'choicePrompt';
 
 class MainDialog extends ComponentDialog {
-    constructor(luisRecognizer, qnaMaker, dbClient, buttonDialog) {
+    constructor(luisRecognizer, qnaMaker, dbClient, buttonDialog, expectinginputDialog) {
         super('MainDialog');
 
         if (!luisRecognizer) throw new Error('[MainDialog]: Missing parameter \'luisRecognizer\' is required');
@@ -22,6 +22,7 @@ class MainDialog extends ComponentDialog {
         // This is a sample "book a flight" dialog.
         this.addDialog(new TextPrompt('TextPrompt'))
             .addDialog(buttonDialog)
+            .addDialog(expectinginputDialog)
             .addDialog(new ChoicePrompt(CHOICE_PROMPT))
             .addDialog(new WaterfallDialog(MAIN_WATERFALL_DIALOG, [
                 this.introStep.bind(this),
@@ -97,7 +98,6 @@ class MainDialog extends ComponentDialog {
      * Second step in the waterfall.
      */
     async actStep(stepContext) { 
-        
         let messageText = "";
         let luisResult, score, currentIntent;
         let entity = "";
@@ -116,33 +116,36 @@ class MainDialog extends ComponentDialog {
          
         const query = stepContext.options.query;
         const previousIntent = stepContext.options.previousIntent;
-        stepContext.options.myIntent = currentIntent;
-        
+
         currentIntent = helpers.createIntent(query, previousIntent, entity, currentIntent)
+        stepContext.options.myIntent = currentIntent;
         // If this is a LUIS intent
         if (query[currentIntent] && query[currentIntent].intents) {
             let key = query[currentIntent].intents[Object.keys(query[currentIntent].intents)[0]];
             if (key.button) {
                 stepContext.options.previousIntent = currentIntent
                 stepContext.options.buttonIntents = query[currentIntent].intents
-                return await stepContext.beginDialog('buttonDialog', stepContext.options)
+                return await stepContext.beginDialog('buttonDialog', stepContext.options);
             } 
             // Luis Intent with no buttons
             else {
                 // Attach the message associated with this LUIS intent
-                
                 messageText = query[currentIntent].text
             }  
         // Luis Intent with no intent mapping
         } else if (query[currentIntent]) {
-            // Attach the message associated with this LUIS intent
-            messageText = query[currentIntent].text
+            if (query[currentIntent].expectinginput) {
+                    return await stepContext.beginDialog('expectinginputDialog', stepContext.options);
+            } else {
+                // Attach the message associated with this LUIS intent
+                messageText = query[currentIntent].text
+            }
         }
         
         // Search QNA Maker for response
         else {
             const qnaResults = await this.qnaMaker.getAnswers(stepContext.context);
-            if (!qnaResults[0]) {
+            if (!qnaResults[0] || qnaResults[0].score < 0.3) {
                 // Use Fallback
                 stepContext.options.previousIntent = helpers.getFallback(query, stepContext.options.previousIntent)
                 stepContext.options.buttonIntents = query[stepContext.options.previousIntent].intents
@@ -180,6 +183,11 @@ class MainDialog extends ComponentDialog {
                 }
             } 
             
+        } else if (stepContext.result) {
+            stepContext.options.previousIntent = stepContext.options.myIntent;
+            stepContext.options.nextMessage = stepContext.result.nextMessage;
+            stepContext.options.name = stepContext.result.expectinginput.text1;
+            stepContext.options.email = stepContext.result.expectinginput.text2;
         } else {
             stepContext.options.previousIntent = stepContext.options.myIntent;
         }

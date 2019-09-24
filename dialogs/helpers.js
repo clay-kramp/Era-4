@@ -11,7 +11,7 @@ module.exports = {
 		    // If intent mapping exists
 	        if (previousIntent && query[previousIntent] && query[previousIntent].intents) {
 	            if (query[previousIntent].intents[currentIntent]) {
-	                currentIntent = query[previousIntent].intents[currentIntent]
+                    currentIntent = query[previousIntent].intents[currentIntent].intent
 	            } 
 	            // If there is an intent one level deeper
 	            else if (query[previousIntent + "-" + currentIntent]) {

@@ -17,6 +17,7 @@ const { CosmosClient } = require('@azure/cosmos');
 const { DialogAndWelcomeBot } = require('./bots/dialogAndWelcomeBot');
 const { MainDialog } = require('./dialogs/mainDialog');
 const { ButtonDialog } = require('./dialogs/buttonDialog')
+const { ExpectinginputDialog } = require('./dialogs/expectinginputDialog')
 
 // Note: Ensure you have a .env file and include LuisAppId, LuisAPIKey and LuisAPIHostName.
 const ENV_FILE = path.join(__dirname, '.env');
@@ -71,7 +72,8 @@ const dbClient = new CosmosClient({ endpoint: process.env.dbEnd, key: process.en
 
 // Create the main dialog.
 const buttonDialog = new ButtonDialog('buttonDialog');
-const dialog = new MainDialog(luisRecognizer, qnaMaker, dbClient, buttonDialog);
+const expectinginputDialog = new ExpectinginputDialog('expectinginputDialog')
+const dialog = new MainDialog(luisRecognizer, qnaMaker, dbClient, buttonDialog, expectinginputDialog);
 const bot = new DialogAndWelcomeBot(conversationState, userState, dialog);
 
 // Create HTTP server
