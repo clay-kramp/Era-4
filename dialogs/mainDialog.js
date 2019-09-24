@@ -175,6 +175,10 @@ class MainDialog extends ComponentDialog {
             }
             stepContext.options.nextMessage = stepContext.options.query[buttonIntent].text
             stepContext.options.previousIntent = buttonIntent
+            if (buttonIntent == "givecontact") {
+                stepContext.options.myIntent = buttonIntent
+                return await stepContext.beginDialog('expectinginputDialog', stepContext.options);
+            }
             if (stepContext.options.query[buttonIntent].intents) {
                 let key = stepContext.options.query[buttonIntent].intents[Object.keys(stepContext.options.query[buttonIntent].intents)[0]];
                 if (key.button) {

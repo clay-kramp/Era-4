@@ -35,7 +35,7 @@ class ExpectinginputDialog extends ComponentDialog {
         return await stepContext.prompt(TEXT_PROMPT, { prompt: messageText });
     }
     
-    async emailStep(stepContext) {  
+    async emailStep(stepContext) { 
         stepContext.options.expectinginput = {};
         stepContext.options.expectinginput["text1"] = stepContext.result;
 		let messageText = "";
